@@ -1,26 +1,26 @@
 name: Test
+
 on: push
 
-
 concurrency:
-  group: ci-${{ github.head_ref }}
+  group: ci-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     container:
-      image: clojure:openjdk-11-lein-2.9.6
+      image: clojure:temurin-25-lein-bullseye-slim
 
     services:
       postgres:
-        image: "postgres:13"
+        image: postgres:18
         env:
-          POSTGRES_USER: test
+          POSTGRES_USER: lockjaw
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: test
-        ports:
-          - 5432:5432
+          POSTGRES_DB: lockjaw_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -28,26 +28,22 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6.0.2
 
     - name: Cache deps
-      uses: actions/cache@v2
+      uses: actions/cache@v5.0.3
       with:
         path: /root/.m2
         key: v1-deps-${{ hashFiles('project.clj') }}
-        restore-keys: |
-          v1-deps-${{ hashFiles('project.clj') }}
 
     - name: Install dependencies
       run: lein deps
 
-    - name: Run lockjaw tests
-      id: tests
+    - name: Run tests
       run: lein test 2>&1
-
       env:
-        POSTGRES_USER: test
+        POSTGRES_USER: lockjaw
         POSTGRES_PASSWORD: password
         POSTGRES_HOST: postgres
         POSTGRES_PORT: 5432
-        POSTGRES_DB: test
+        POSTGRES_DB: lockjaw_test

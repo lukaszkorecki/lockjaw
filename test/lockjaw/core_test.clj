@@ -49,13 +49,21 @@
     (is (false? (lock/acquired-by-name? (:lock-1 @sys) "no lock")))))
 
 
+(def ^:private held-timeout-ms 5000)
+
+
 (deftest handy-macros
   (testing "nice macro ensures lock clean up"
-    (let [fut (future
+    ;; the promise is delivered from inside the macro body, so it only fires
+    ;; once the lock is actually held - waiting on it (instead of sleeping)
+    ;; keeps the test free of races
+    (let [held (promise)
+          fut (future
                 (lock/with-lock (:lock-1 @sys)
+                                (deliver held true)
                                 (Thread/sleep 50)
                                 ::done))]
-      (Thread/sleep 10)
+      (is (true? (deref held held-timeout-ms false)))
       (is (= :lockjaw.operation/no-lock
              (lock/with-lock! (:lock-2 @sys)
                               ::invalid)))
@@ -63,11 +71,13 @@
              @fut))))
   (testing "nice macro with name ensures lock clean up too"
     (let [lock-name "a-nice-lock"
+          held (promise)
           fut (future
                 (lock/with-named-lock (:lock-1 @sys) lock-name
+                                      (deliver held true)
                                       (Thread/sleep 50)
                                       ::done))]
-      (Thread/sleep 10)
+      (is (true? (deref held held-timeout-ms false)))
       (is (= :lockjaw.operation/no-lock
              (lock/with-named-lock! (:lock-2 @sys) lock-name
                                     ::invalid)))

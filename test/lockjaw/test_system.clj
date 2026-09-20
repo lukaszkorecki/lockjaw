@@ -1,26 +1,63 @@
 (ns lockjaw.test-system
   (:require
+    [clojure.tools.logging :as log]
     [com.stuartsierra.component :as component]
-    [utility-belt.sql.component.connection-pool :as cp]))
+    [next.jdbc.connection :as connection]
+    [next.jdbc.protocols :as jdbc.protocols])
+  (:import
+    (com.zaxxer.hikari
+      HikariDataSource)))
 
 
 (def db-spec
-  {:pool-name  "test"
-   :adapter "postgresql"
-   :username (or (System/getenv "POSTGRES_USER") "nomnom")
+  {:dbtype "postgresql"
+   :username (or (System/getenv "POSTGRES_USER") "lockjaw")
    :password (or (System/getenv "POSTGRES_PASSWORD") "password")
-   :server-name  (or (System/getenv "POSTGRES_HOST") "127.0.0.1")
-   :port-number (Integer/parseInt (or (System/getenv "POSTGRES_PORT") "5432"))
-   :maximum-pool-size 2
-   :database-name (or (System/getenv "POSTGRES_DB") "nomnom_test")})
+   :host (or (System/getenv "POSTGRES_HOST") "127.0.0.1")
+   :port (Integer/parseInt (or (System/getenv "POSTGRES_PORT") "5432"))
+   :dbname (or (System/getenv "POSTGRES_DB") "lockjaw_test")
+   :maximumPoolSize 2})
+
+
+(defrecord ConnectionPool
+  [config datasource]
+  component/Lifecycle
+  (start
+    [this]
+    (log/infof "%s connecting=%s %s:%s"
+               (:poolName config)
+               (:dbname config)
+               (:host config)
+               (:port config))
+    (assoc this :datasource (connection/->pool HikariDataSource config)))
+  (stop
+    [this]
+    (log/warnf "%s disconnecting=%s %s:%s"
+               (:poolName config)
+               (:dbname config)
+               (:host config)
+               (:port config))
+    (when datasource
+      (.close ^HikariDataSource datasource))
+    (assoc this :datasource nil))
+  jdbc.protocols/Sourceable
+  (get-datasource [this]
+    (:datasource this)))
+
+
+(defn create-pool
+  "Minimal stand-in for a connection pool component - the tests need two
+  independent pools, as advisory locks are held per connection/session."
+  [pool-name]
+  (map->ConnectionPool {:config (assoc db-spec :poolName pool-name)}))
 
 
 (defn create
   [extra]
   (component/map->SystemMap
     (merge extra
-           {:db-conn (cp/create db-spec)
-            :db-conn-2 (cp/create db-spec)})))
+           {:db-conn (create-pool "test-1")
+            :db-conn-2 (create-pool "test-2")})))
 
 
 (defn start!
