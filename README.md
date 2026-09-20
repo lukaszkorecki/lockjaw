@@ -120,11 +120,15 @@ acquire the lock. It can also be configured to never acquire it:
   (lock/acquire! never-lock) ;; => false
 
   ;; you can also pass the lock name:
-  (lock/acquire-by-name! always-lock "who?")) ;; => true
+  (lock/acquire-by-name! always-lock "who?") ;; => true
+
+  ;; ...and the rest of the protocol answers with the same flag:
+  (lock/acquired? always-lock) ;; => true
+  (lock/acquired-by-name? never-lock "who?") ;; => false
+  (lock/release-all! always-lock)) ;; => true
 ```
 
 > The mock is not a Component - it has no lifecycle, so there's no need to start or stop it.
-> It only implements `acquire!`, `acquire-by-name!`, `release!` and `release-by-name!`.
 
 # Testing
 
