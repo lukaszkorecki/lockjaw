@@ -1,55 +1,49 @@
 (ns lockjaw.protocol)
 
 (defprotocol Lockjaw
-  (acquire! [this]
-    "Tries to get a lock for given component ID")
-  (acquire-by-name! [this lock-name]
-    "Converts passed name to ID and tries to aquire a lock for it")
-  (acquired? [this]
-    "Checks if lock was already acquired")
-  (acquired-by-name? [this lock-name]
-    "Converts passed name to ID and checks if lock was already acquired")
-  (release! [this]
-    "Rleases the component lock")
-  (release-by-name! [this lock-name]
-    "Converts passed name to ID and releases it")
+  :extend-via-metadata true
+  (acquire! [this] [this opts]
+    "Tries to get the lock. With no opts it locks on the component's own name,
+    pass `{:name \"user-123\"}` to lock on an arbitrary entity instead.")
+  (acquired? [this] [this opts]
+    "Checks whether this connection's session currently holds the lock,
+    according to Postgres.")
+  (release! [this] [this opts]
+    "Releases the lock. Takes the same opts as `acquire!`.")
   (release-all! [this]
-    "Releases all acquired locks"))
+    "Releases every advisory lock held by this component's connection."))
+
+;; Both macros take a map as their first argument - :lock is the component and
+;; the rest is passed to acquire!/release! as opts. Keeping the lock inside that
+;; map is what lets the body follow without any ambiguity about where opts end.
 
 (defmacro with-lock
-  "Run the code if a lock is obtained"
-  [a-lock & body]
-  `(if (acquire! ~a-lock)
-     (do
-       ~@body)
-     :lockjaw.operation/no-lock))
+  "Run the code if the lock is obtained, otherwise return
+  `:lockjaw.operation/no-lock`.
+
+  ```clojure
+  (with-lock {:lock a-lock} (do-work))
+  (with-lock {:lock a-lock :name \"user-123\"} (do-work))
+  ```"
+  [opts & body]
+  `(let [opts# ~opts
+         lock# (:lock opts#)
+         lock-opts# (dissoc opts# :lock)]
+     (if (acquire! lock# lock-opts#)
+       (do
+         ~@body)
+       :lockjaw.operation/no-lock)))
 
 (defmacro with-lock!
-  "Like *with-lock* but release it after use"
-  [a-lock & body]
-  `(try
-     (if (acquire! ~a-lock)
-       (do
-         ~@body)
-       :lockjaw.operation/no-lock)
-     (finally
-       (release! ~a-lock))))
-
-(defmacro with-named-lock
-  "Run the code if a lock with the passed name is obtained"
-  [a-lock lock-name & body]
-  `(if (acquire-by-name! ~a-lock ~lock-name)
-     (do
-       ~@body)
-     :lockjaw.operation/no-lock))
-
-(defmacro with-named-lock!
-  "Like *with-lock* but release it after use"
-  [a-lock lock-name & body]
-  `(try
-     (if (acquire-by-name! ~a-lock ~lock-name)
-       (do
-         ~@body)
-       :lockjaw.operation/no-lock)
-     (finally
-       (release-by-name! ~a-lock ~lock-name))))
+  "Like *with-lock* but releases the lock after use."
+  [opts & body]
+  `(let [opts# ~opts
+         lock# (:lock opts#)
+         lock-opts# (dissoc opts# :lock)]
+     (try
+       (if (acquire! lock# lock-opts#)
+         (do
+           ~@body)
+         :lockjaw.operation/no-lock)
+       (finally
+         (release! lock# lock-opts#)))))
