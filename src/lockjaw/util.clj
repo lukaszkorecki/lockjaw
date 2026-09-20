@@ -1,8 +1,7 @@
 (ns lockjaw.util
   (:import
-    (java.util.zip
-      CRC32)))
-
+   (java.util.zip
+    CRC32)))
 
 (defn name-to-id
   "Converts a string to an int"

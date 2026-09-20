@@ -1,8 +1,7 @@
 (ns lockjaw.util-test
   (:require
-    [clojure.test :refer [deftest is testing]]
-    [lockjaw.util :as util]))
-
+   [clojure.test :refer [deftest is testing]]
+   [lockjaw.util :as util]))
 
 (def sample-names
   ["optimus-prime"
@@ -10,7 +9,6 @@
    "skywarp"
    "lazerbeak"
    "unicron"])
-
 
 (deftest ensures-all-names-from-id-are-unique
   (testing "name to id is always the same"
@@ -23,5 +21,5 @@
   (testing "generated ids are always unique"
     (is (= (count sample-names)
            (count
-             (set
-               (map util/name-to-id sample-names)))))))
+            (set
+             (map util/name-to-id sample-names)))))))

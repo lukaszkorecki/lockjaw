@@ -1,6 +1,5 @@
 (ns lockjaw.protocol)
 
-
 (defprotocol Lockjaw
   (acquire! [this]
     "Tries to get a lock for given component ID")
@@ -17,7 +16,6 @@
   (release-all! [this]
     "Releases all acquired locks"))
 
-
 (defmacro with-lock
   "Run the code if a lock is obtained"
   [a-lock & body]
@@ -25,7 +23,6 @@
      (do
        ~@body)
      :lockjaw.operation/no-lock))
-
 
 (defmacro with-lock!
   "Like *with-lock* but release it after use"
@@ -38,7 +35,6 @@
      (finally
        (release! ~a-lock))))
 
-
 (defmacro with-named-lock
   "Run the code if a lock with the passed name is obtained"
   [a-lock lock-name & body]
@@ -46,7 +42,6 @@
      (do
        ~@body)
      :lockjaw.operation/no-lock))
-
 
 (defmacro with-named-lock!
   "Like *with-lock* but release it after use"

@@ -1,14 +1,13 @@
 (ns lockjaw.core
   (:require
-    [clojure.tools.logging :as log]
-    [com.stuartsierra.component :as component]
-    [lockjaw.operation :as operation]
-    [lockjaw.protocol :as lockjaw]
-    [lockjaw.util :as util]))
-
+   [clojure.tools.logging :as log]
+   [com.stuartsierra.component :as component]
+   [lockjaw.operation :as operation]
+   [lockjaw.protocol :as lockjaw]
+   [lockjaw.util :as util]))
 
 (defrecord Lockjaw
-  [name lock-id db-conn]
+           [name lock-id db-conn]
   component/Lifecycle
   (start
     [this]
@@ -38,7 +37,6 @@
       (operation/release-lock db-conn lock-id)))
   (release-all! [_]
     (operation/release-all-locks! db-conn)))
-
 
 (defn create
   [{:keys [name] :as args}]

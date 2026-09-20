@@ -1,13 +1,12 @@
 (ns lockjaw.test-system
   (:require
-    [clojure.tools.logging :as log]
-    [com.stuartsierra.component :as component]
-    [next.jdbc.connection :as connection]
-    [next.jdbc.protocols :as jdbc.protocols])
+   [clojure.tools.logging :as log]
+   [com.stuartsierra.component :as component]
+   [next.jdbc.connection :as connection]
+   [next.jdbc.protocols :as jdbc.protocols])
   (:import
-    (com.zaxxer.hikari
-      HikariDataSource)))
-
+   (com.zaxxer.hikari
+    HikariDataSource)))
 
 (def db-spec
   {:dbtype "postgresql"
@@ -18,9 +17,8 @@
    :dbname (or (System/getenv "POSTGRES_DB") "lockjaw_test")
    :maximumPoolSize 2})
 
-
 (defrecord ConnectionPool
-  [config datasource]
+           [config datasource]
   component/Lifecycle
   (start
     [this]
@@ -44,26 +42,22 @@
   (get-datasource [this]
     (:datasource this)))
 
-
 (defn create-pool
   "Minimal stand-in for a connection pool component - the tests need two
   independent pools, as advisory locks are held per connection/session."
   [pool-name]
   (map->ConnectionPool {:config (assoc db-spec :poolName pool-name)}))
 
-
 (defn create
   [extra]
   (component/map->SystemMap
-    (merge extra
-           {:db-conn (create-pool "test-1")
-            :db-conn-2 (create-pool "test-2")})))
-
+   (merge extra
+          {:db-conn (create-pool "test-1")
+           :db-conn-2 (create-pool "test-2")})))
 
 (defn start!
   [sysatom extra]
   (reset! sysatom (component/start (create extra))))
-
 
 (defn stop!
   [sysatom]
