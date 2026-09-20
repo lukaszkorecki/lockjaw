@@ -14,7 +14,7 @@
                  [com.stuartsierra/component "1.2.0"]]
   :profiles {:dev
              {:resource-paths ["dev-resources"]
-              :dependencies [[ch.qos.logback/logback-classic "1.5.38"]
+              :dependencies [[ch.qos.logback/logback-classic "1.6.3"]
                              ;; the PG driver and a connection pool, used to
                              ;; build the test system
                              [com.zaxxer/HikariCP "7.1.0"]
