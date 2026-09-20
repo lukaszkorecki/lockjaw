@@ -14,7 +14,7 @@
    :username (or (System/getenv "POSTGRES_USER") "lockjaw")
    :password (or (System/getenv "POSTGRES_PASSWORD") "password")
    :host (or (System/getenv "POSTGRES_HOST") "127.0.0.1")
-   :port (Integer/parseInt (or (System/getenv "POSTGRES_PORT") "5432"))
+   :port (Integer/parseInt (or (System/getenv "POSTGRES_PORT") "6001"))
    :dbname (or (System/getenv "POSTGRES_DB") "lockjaw_test")
    :maximumPoolSize 2})
 

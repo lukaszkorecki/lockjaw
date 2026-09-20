@@ -1,0 +1,21 @@
+# Postgres instance used by lockjaw's test suite.
+#
+# Deliberately *not* on the default 5432 - the tests acquire advisory locks and
+# release all of them on component stop, so they need a database of their own
+# and shouldn't collide with a Postgres running for another project.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: lockjaw
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lockjaw_test
+      # both the server and pg_isready pick the port up from here
+      PGPORT: 6001
+    ports:
+      - "6001:6001"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lockjaw -d lockjaw_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

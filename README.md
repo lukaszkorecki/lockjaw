@@ -128,23 +128,26 @@ acquire the lock. It can also be configured to never acquire it:
 
 # Testing
 
-Tests need a running Postgres instance. For example:
+Tests need a running Postgres instance - there's a `docker-compose.yml` for that:
 
 ```sh
-docker run --rm -d --name lockjaw-pg \
-  -e POSTGRES_USER=lockjaw \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=lockjaw_test \
-  -p 5432:5432 \
-  postgres:18
+docker compose up -d
+lein test
+docker compose down
 ```
 
-Then run:
+It listens on **port 6001**, not the default 5432, so it won't clash with a Postgres
+you're running for another project.
 
-`lein test`
+Connection details are read from the environment, and default to what compose sets up:
 
-Connection details are read from the environment, and default to the values above:
-`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` and `POSTGRES_DB`.
+| variable | default |
+| --- | --- |
+| `POSTGRES_USER` | `lockjaw` |
+| `POSTGRES_PASSWORD` | `password` |
+| `POSTGRES_HOST` | `127.0.0.1` |
+| `POSTGRES_PORT` | `6001` |
+| `POSTGRES_DB` | `lockjaw_test` |
 
 > Ensure no other database connections are currently holding advisory locks when running tests.
 
